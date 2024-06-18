@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { merge } from 'lodash'
-import { getUserById } from '../db/users'
+import { UserModel } from '../db/users'
 import generateErrorResponse from '../utils/generateErrorResponse'
 
 const isAuthenticated = async (
@@ -23,19 +23,18 @@ const isAuthenticated = async (
       userId: string
     }
 
-    const user = await getUserById(decoded.userId)
+    const user = await UserModel.findById(decoded.userId)
 
     if (!user) {
       res.cookie('jwt', '', { maxAge: 1 })
 
       return generateErrorResponse({
-        error: new Error('User not found.'),
+        error: new Error('Unauthorized.'),
         res,
         code: 401,
       })
     }
 
-    console.log('🚀 ~ user:', user.role, user.name)
     merge(req, {
       user: {
         _id: user._id,

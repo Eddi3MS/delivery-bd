@@ -1,8 +1,8 @@
-import { Request, Response } from 'express'
-import generateErrorResponse from '../utils/generateErrorResponse'
-import { createProductSchema } from '../schemas/productSchema'
 import { v2 as cloudinary } from 'cloudinary'
-import { ProductModel, createProduct } from '../db/products'
+import { Request, Response } from 'express'
+import { ProductModel } from '../db/products'
+import { createProductSchema } from '../schemas/productSchema'
+import generateErrorResponse from '../utils/generateErrorResponse'
 
 async function createProductHandler(req: Request, res: Response) {
   try {
@@ -22,7 +22,7 @@ async function createProductHandler(req: Request, res: Response) {
 
     let cloudImage = uploadedResponse.public_id
 
-    const product = await createProduct({
+    const product = await ProductModel.create({
       name,
       category,
       description,
@@ -104,7 +104,7 @@ async function listProductsHandler(req: Request, res: Response) {
 
 export {
   createProductHandler,
-  updateProductHandler,
   deleteProductHandler,
   listProductsHandler,
+  updateProductHandler,
 }

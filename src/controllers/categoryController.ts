@@ -1,14 +1,6 @@
 import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import {
-  createCategory,
-  deleteCategory,
-  getCategories,
-  getCategoryById,
-  getCategoryBySlug,
-  updateCategory,
-  updateOrder,
-} from '../db/categories'
+import { CategoryModel } from '../db/categories'
 import {
   categorySchema,
   updateCategoriesOrder,
@@ -31,7 +23,7 @@ async function createCategoryHandler(req: Request, res: Response) {
 
     const slug = name.toUpperCase().replace(' ', '-')
 
-    const hasCategory = await getCategoryBySlug(slug)
+    const hasCategory = await CategoryModel.findOne({ slug })
 
     if (!!hasCategory) {
       return generateErrorResponse({
@@ -41,7 +33,7 @@ async function createCategoryHandler(req: Request, res: Response) {
       })
     }
 
-    const category = await createCategory({ name, slug })
+    const category = await CategoryModel.create({ name, slug })
 
     res.status(201).json({
       _id: category._id,
@@ -66,7 +58,7 @@ async function updateCategoryHandler(req: Request, res: Response) {
       })
     }
 
-    const hasCategoryToUpdate = await getCategoryById(id)
+    const hasCategoryToUpdate = await CategoryModel.findById(id)
 
     if (!hasCategoryToUpdate) {
       return generateErrorResponse({
@@ -80,7 +72,7 @@ async function updateCategoryHandler(req: Request, res: Response) {
 
     const slug = name.toUpperCase().replace(' ', '-')
 
-    const nameAlreadyInUse = await getCategoryBySlug(slug)
+    const nameAlreadyInUse = await CategoryModel.findOne({ slug })
 
     if (!!nameAlreadyInUse) {
       return generateErrorResponse({
@@ -90,7 +82,7 @@ async function updateCategoryHandler(req: Request, res: Response) {
       })
     }
 
-    await updateCategory(id, { name, slug })
+    await CategoryModel.findByIdAndUpdate(id, { name, slug })
 
     res.status(201).json({ message: 'Category updated' })
   } catch (error) {
@@ -109,7 +101,7 @@ async function deleteCategoryHandler(req: Request, res: Response) {
         code: 400,
       })
 
-    const hasCategoryToDelete = await getCategoryById(id)
+    const hasCategoryToDelete = await CategoryModel.findById(id)
 
     if (!hasCategoryToDelete) {
       return generateErrorResponse({
@@ -119,7 +111,7 @@ async function deleteCategoryHandler(req: Request, res: Response) {
       })
     }
 
-    await deleteCategory(id)
+    await CategoryModel.findOneAndDelete({ _id: id })
 
     res.status(201).json({ message: 'Category deleted' })
   } catch (error) {
@@ -139,7 +131,14 @@ async function reorderHandler(req: Request, res: Response) {
       })
     }
 
-    await updateOrder(parsedBody.data)
+    const bulkOps = parsedBody.data.map(({ id, order }) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { order },
+      },
+    }))
+
+    await CategoryModel.bulkWrite(bulkOps)
 
     res.status(201).json({ message: 'Order updated' })
   } catch (error) {
@@ -149,7 +148,7 @@ async function reorderHandler(req: Request, res: Response) {
 
 async function listCategoriesHandler(req: Request, res: Response) {
   try {
-    const categories = await getCategories()
+    const categories = await CategoryModel.find().sort({ order: -1 })
 
     res.status(201).json(categories)
   } catch (error) {

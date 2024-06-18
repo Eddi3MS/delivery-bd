@@ -2,7 +2,7 @@ import { v2 as cloudinary } from 'cloudinary'
 import { Request, Response } from 'express'
 import { get } from 'lodash'
 import mongoose from 'mongoose'
-import { createUser, getUserByEmail, getUserById } from '../db/users'
+import { UserModel } from '../db/users'
 import {
   loginUserSchema,
   registerUserSchema,
@@ -29,7 +29,7 @@ async function signupHandler(req: Request, res: Response) {
 
     const { name, email, password, phone } = parsedBody.data
 
-    const user = await getUserByEmail(email)
+    const user = await UserModel.findOne({ email })
 
     if (user)
       return generateErrorResponse({
@@ -40,7 +40,7 @@ async function signupHandler(req: Request, res: Response) {
 
     const hashedPassword = await generateHashedPassword(password)
 
-    const newUser = await createUser({
+    const newUser = await UserModel.create({
       name,
       email,
       phone,
@@ -76,7 +76,7 @@ async function signinHandler(req: Request, res: Response) {
 
     const { email, password } = parsedBody.data
 
-    const user = await getUserByEmail(email)
+    const user = await UserModel.findOne({ email })
 
     if (!user)
       return generateErrorResponse({
@@ -119,74 +119,70 @@ async function logoutHandler(_: Request, res: Response) {
 }
 
 async function updateAccountHandler(req: Request, res: Response) {
-  const parsedBody = updateUserSchema.safeParse(req.body)
-
-  if (!parsedBody.success)
-    return generateErrorResponse({
-      error: new Error('Wrong data format'),
-      res,
-      code: 400,
-    })
-
-  const { name, email, password, phone } = parsedBody.data
-  let { profilePic } = parsedBody.data
-
-  const userId = get(req, 'user._id') as unknown as string
-
-  if (!userId)
-    return generateErrorResponse({
-      error: new Error('User not found'),
-      res,
-      code: 400,
-    })
-
-  if (req.params.id !== userId.toString())
-    return generateErrorResponse({
-      error: new Error("You cannot update other user's profile"),
-      res,
-      code: 400,
-    })
-
   try {
-    let user = await getUserById(userId)
+    const parsedBody = updateUserSchema.safeParse(req.body)
 
-    if (!user)
+    if (!parsedBody.success)
       return generateErrorResponse({
-        error: new Error('User not found'),
+        error: new Error('Wrong data format'),
         res,
         code: 400,
       })
 
+    const { name, email, phone } = parsedBody.data
+    let { profilePic, password } = parsedBody.data
+
+    const id = get(req, 'user._id') as unknown as string
+    const currPicture = get(req, 'user.profilePic') as unknown as string
+
+    if (req.params.id !== id.toString())
+      return generateErrorResponse({
+        error: new Error('Unauthorized'),
+        res,
+        code: 401,
+      })
+
     if (password) {
       const hashedPassword = await generateHashedPassword(password)
-      user.password = hashedPassword
+      password = hashedPassword
     }
 
     if (profilePic) {
-      if (user.profilePic) {
-        await cloudinary.uploader.destroy(
-          user.profilePic?.split('/')?.pop()?.split('.')[0] || ''
-        )
+      if (currPicture) {
+        await cloudinary.uploader.destroy(currPicture)
       }
 
       const uploadedResponse = await cloudinary.uploader.upload(profilePic)
-      profilePic = uploadedResponse.secure_url
+      profilePic = uploadedResponse.public_id
     }
 
-    user.name = name || user.name
-    user.email = email || user.email
-    user.profilePic = profilePic || user.profilePic
-    user.phone = phone || user.phone
+    const dataToUpdate = {
+      ...(name && { name }),
+      ...(email && { email }),
+      ...(phone && { phone }),
+      ...(profilePic && { profilePic }),
+      ...(password && { password }),
+    }
 
-    user = await user.save()
+    const updatedUser = await UserModel.findByIdAndUpdate(id, dataToUpdate, {
+      new: true,
+    })
+
+    if (!updatedUser) {
+      return generateErrorResponse({
+        error: new Error('Unauthorized'),
+        res,
+        code: 401,
+      })
+    }
 
     res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      profilePic: user.profilePic,
-      role: user.role,
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      profilePic: updatedUser.profilePic,
+      role: updatedUser.role,
     })
   } catch (error) {
     generateErrorResponse({ error, res })
@@ -194,36 +190,38 @@ async function updateAccountHandler(req: Request, res: Response) {
 }
 
 async function getUserProfileHandler(req: Request, res: Response) {
-  const { id } = req.params
-
-  if (!id || !mongoose.Types.ObjectId.isValid(id))
-    return generateErrorResponse({
-      error: new Error('Invalid query param'),
-      res,
-      code: 400,
-    })
-
-  const isAdmin =
-    (get(req, 'user.role') as unknown as 'USER' | 'ADMIN') === 'ADMIN'
-
-  const currUserId = get(req, 'user._id') as unknown as string
-
-  if (id !== currUserId && !isAdmin)
-    return generateErrorResponse({
-      error: new Error('Not allowed.'),
-      res,
-      code: 400,
-    })
-
   try {
-    const user = await getUserById(id)
+    const { id } = req.params
 
-    if (!user)
+    if (!id || !mongoose.Types.ObjectId.isValid(id))
+      return generateErrorResponse({
+        error: new Error('Invalid query param'),
+        res,
+        code: 400,
+      })
+
+    const isAdmin =
+      (get(req, 'user.role') as unknown as 'USER' | 'ADMIN') === 'ADMIN'
+
+    const currUserId = get(req, 'user._id') as unknown as string
+
+    if (id !== currUserId && !isAdmin) {
+      return generateErrorResponse({
+        error: new Error('Not allowed.'),
+        res,
+        code: 400,
+      })
+    }
+
+    const user = await UserModel.findById(id)
+
+    if (!user) {
       return generateErrorResponse({
         error: new Error('User not found'),
         res,
         code: 404,
       })
+    }
 
     res.status(200).json({
       _id: user._id,
@@ -240,8 +238,8 @@ async function getUserProfileHandler(req: Request, res: Response) {
 
 export {
   getUserProfileHandler,
-  updateAccountHandler,
   logoutHandler,
   signinHandler,
   signupHandler,
+  updateAccountHandler,
 }
