@@ -35,6 +35,7 @@ const isAuthenticated = async (
       })
     }
 
+    console.log('🚀 ~ user:', user.role, user.name)
     merge(req, {
       user: {
         _id: user._id,

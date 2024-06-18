@@ -15,13 +15,13 @@ import {
   generateHashedPassword,
 } from '../utils/passwordHandler'
 
-const signupUser = async (req: Request, res: Response) => {
+async function signupHandler(req: Request, res: Response) {
   try {
     const parsedBody = registerUserSchema.safeParse(req.body)
 
     if (!parsedBody.success) {
       return generateErrorResponse({
-        error: new Error('Wrong data format'),
+        error: new Error('Invalid params'),
         res,
         code: 400,
       })
@@ -62,7 +62,7 @@ const signupUser = async (req: Request, res: Response) => {
   }
 }
 
-const loginUser = async (req: Request, res: Response) => {
+async function signinHandler(req: Request, res: Response) {
   try {
     const parsedBody = loginUserSchema.safeParse(req.body)
 
@@ -109,7 +109,7 @@ const loginUser = async (req: Request, res: Response) => {
   }
 }
 
-const logoutUser = (_: Request, res: Response) => {
+async function logoutHandler(_: Request, res: Response) {
   try {
     res.cookie('jwt', '', { maxAge: 1 })
     res.status(200).json({ message: 'User logged out successfully' })
@@ -118,7 +118,7 @@ const logoutUser = (_: Request, res: Response) => {
   }
 }
 
-const updateUser = async (req: Request, res: Response) => {
+async function updateAccountHandler(req: Request, res: Response) {
   const parsedBody = updateUserSchema.safeParse(req.body)
 
   if (!parsedBody.success)
@@ -193,7 +193,7 @@ const updateUser = async (req: Request, res: Response) => {
   }
 }
 
-const getUserProfile = async (req: Request, res: Response) => {
+async function getUserProfileHandler(req: Request, res: Response) {
   const { id } = req.params
 
   if (!id || !mongoose.Types.ObjectId.isValid(id))
@@ -238,24 +238,10 @@ const getUserProfile = async (req: Request, res: Response) => {
   }
 }
 
-const getOwnUserProfile = async (req: Request, res: Response) => {
-  const user = get(req, 'user') as any
-
-  res.status(200).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    profilePic: user.profilePic,
-    role: user.role,
-  })
-}
-
 export {
-  getOwnUserProfile,
-  getUserProfile,
-  loginUser,
-  logoutUser,
-  signupUser,
-  updateUser,
+  getUserProfileHandler,
+  updateAccountHandler,
+  logoutHandler,
+  signinHandler,
+  signupHandler,
 }

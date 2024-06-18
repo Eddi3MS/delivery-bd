@@ -3,8 +3,8 @@ import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import express from 'express'
 import path from 'path'
-import dbConnection from './db'
-import userRoutes from './routes/userRoutes'
+import dbConnection from './db/connection'
+import { categoryRoutes, productRoutes, userRoutes } from './routes'
 import { app, server } from './socket/socket'
 
 const pathname = path.resolve()
@@ -31,5 +31,7 @@ app.use(cookieParser())
 
 // Routes
 app.use('/api/users', userRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/products', productRoutes)
 
 server.listen(PORT, () => console.log(`Server started at port ${PORT}`))
