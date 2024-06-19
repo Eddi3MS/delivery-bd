@@ -111,7 +111,7 @@ async function deleteCategoryHandler(req: Request, res: Response) {
       })
     }
 
-    await CategoryModel.findOneAndDelete({ _id: id })
+    await CategoryModel.findByIdAndDelete(id)
 
     res.status(201).json({ message: 'Category deleted' })
   } catch (error) {
