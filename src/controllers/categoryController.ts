@@ -94,12 +94,13 @@ async function deleteCategoryHandler(req: Request, res: Response) {
   try {
     const { id } = req.params
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id))
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return generateErrorResponse({
         error: new Error('Invalid params'),
         res,
         code: 400,
       })
+    }
 
     const hasCategoryToDelete = await CategoryModel.findById(id)
 

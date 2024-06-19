@@ -4,7 +4,12 @@ import dotenv from 'dotenv'
 import express from 'express'
 import path from 'path'
 import dbConnection from './db/connection'
-import { categoryRoutes, productRoutes, userRoutes } from './routes'
+import {
+  categoryRoutes,
+  productRoutes,
+  userRoutes,
+  addressRoutes,
+} from './routes'
 import { app, server } from './socket/socket'
 
 const pathname = path.resolve()
@@ -33,5 +38,6 @@ app.use(cookieParser())
 app.use('/api/users', userRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/products', productRoutes)
+app.use('/api/addresses', addressRoutes)
 
 server.listen(PORT, () => console.log(`Server started at port ${PORT}`))
