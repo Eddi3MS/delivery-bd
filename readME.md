@@ -1,9 +1,23 @@
-# Delivery
+# Delivery Backend
 
-## Backend
+### CRUD
+- User
+- Products
+- Address
+- Categories
+- Orders
 
-- Node & Express
+# Tech
+### Backend
+- Node & Express.js
+### DB
+- MongoDB & Mongoose
+### Image Bucket
+- Cloudinary
+### Auth
+- JsonWebToken / bcryptjs / cookie-parser
+### Realtime
+- socket-io
+### Validations
+- Zod
 
-## DB
-
-- MongoDB
