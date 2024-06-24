@@ -9,6 +9,7 @@ import {
   productRoutes,
   userRoutes,
   addressRoutes,
+  orderRoutes,
 } from './routes'
 import { app, server } from './socket/socket'
 
@@ -39,5 +40,6 @@ app.use('/api/users', userRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/addresses', addressRoutes)
+app.use('/api/orders', orderRoutes)
 
 server.listen(PORT, () => console.log(`Server started at port ${PORT}`))
