@@ -38,6 +38,7 @@ async function createCategoryHandler(req: Request, res: Response) {
     res.status(201).json({
       _id: category._id,
       name: category.name,
+      slug: category.slug,
       order: category.order,
     })
   } catch (error) {

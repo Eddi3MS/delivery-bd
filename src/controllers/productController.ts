@@ -169,7 +169,7 @@ async function listProductsHandler(req: Request, res: Response) {
       {
         $group: {
           _id: '$category',
-          category: { $first: '$categoryData' },
+          name: { $first: '$categoryData.name' },
           products: {
             $push: {
               _id: '$_id',
@@ -186,8 +186,8 @@ async function listProductsHandler(req: Request, res: Response) {
       },
       {
         $project: {
-          _id: 0,
-          category: 1,
+          _id: 1,
+          name: 1,
           products: 1,
         },
       },
