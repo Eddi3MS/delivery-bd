@@ -47,7 +47,7 @@ async function signupHandler(req: Request, res: Response) {
       password: hashedPassword,
     })
 
-    generateTokenAndSetCookie(newUser._id, res)
+    generateTokenAndSetCookie(newUser._id, newUser.role, res)
 
     res.status(201).json({
       _id: newUser._id,
@@ -94,7 +94,7 @@ async function signinHandler(req: Request, res: Response) {
         code: 400,
       })
 
-    generateTokenAndSetCookie(user._id, res)
+    generateTokenAndSetCookie(user._id, user.role, res)
 
     res.status(200).json({
       _id: user._id,
